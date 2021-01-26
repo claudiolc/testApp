@@ -19,9 +19,13 @@ function App() {
   const [itemList, setItemList] = React.useState<Person[]>([])
   const [edition, setEdition] = React.useState<Boolean>(false)
 
-  function callApi() {
-    return fetch("http://localhost:9000")
-        .then(res => res.json())
+  async function fetchJson() {
+    return await fetch("http://localhost:9000")
+        .then(res => res.json());
+  }
+
+  async function callApi() {
+    let json = await fetchJson()
         .then(res => res as Person[])
         .then(res => setItemList(res))
   }
