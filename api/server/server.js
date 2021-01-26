@@ -4,6 +4,8 @@ var express = require("express");
 var cors = require("cors");
 var app = express();
 app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded());
 var knex = require('knex')({
     client: 'pg',
     version: '13.1',
@@ -14,14 +16,22 @@ var knex = require('knex')({
         database: 'testapp'
     }
 });
-var query;
-knex.select().from('patient').then(function (data) {
-    query = data;
-}).catch(function (e) {
-    console.error(e);
+app.get("/index", function (req, res, next) {
+    knex.select().from('patient').then(function (data) {
+        res.send(data);
+    }).catch(function (e) {
+        console.error(e);
+    });
 });
-app.get("/", function (req, res, next) {
-    res.send(query);
+app.post("/edit", function (req, res, next) {
+    var patient = req.body;
+    console.log(patient);
+    knex('patient')
+        .where({ id: patient.id })
+        .update(patient)
+        .catch(function (e) {
+        console.error(e);
+    });
 });
 app.listen(9000, function () {
     console.log('App listening on port 9000');
