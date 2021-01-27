@@ -22,6 +22,7 @@ function App() {
   const [itemList, setItemList] = React.useState<Person[]>([])
   const [edition, setEdition] = React.useState<Boolean>(false)
   const [currentRegistry, setCurrentRegistry] = React.useState<Person>({id: 0, name: 'null', email: 'null', treatment: 'null'});
+  const [updateCount, setUpdateCount] = React.useState<number>(0);
 
   const handleClose = () => setEdition(false);
   const handleShow = (index: number) => {
@@ -50,6 +51,7 @@ function App() {
   const handleSubmitChanges = () => {
     sendRequest()
     handleClose()
+    setUpdateCount(updateCount + 1)
   }
 
   async function fetchJson() {
@@ -65,7 +67,7 @@ function App() {
 
   useEffect(() => {
     callApi()
-  }, [])
+  }, [updateCount])
 
   function onChangeCurrentRegistry<k extends keyof Person>(key: k, value: Person[k])  {
     setCurrentRegistry({...currentRegistry, [key]: value});
@@ -79,25 +81,45 @@ function App() {
         </Modal.Header>
     
         <Modal.Body>
-        <Form.Group controlId="formID">
+          <Form.Group controlId="formID">
             <Form.Label>ID</Form.Label>
-            <Form.Control type="number" placeholder="Enter ID" defaultValue={currentRegistry?.id}/>
+            <Form.Control 
+              type="number"
+              placeholder="Enter ID"
+              value={currentRegistry?.id}
+              disabled
+            />
           </Form.Group>
+
           <Form.Group controlId="formName">
             <Form.Label>Name</Form.Label>
-            <Form.Control type="text"
+            <Form.Control 
+              type="text"
               placeholder="Enter name"
               defaultValue={currentRegistry?.name}
               onChange={(event) => onChangeCurrentRegistry("name", event.target.value)} 
             />
           </Form.Group>
+
           <Form.Group controlId="formEmail">
             <Form.Label>Email</Form.Label>
-            <Form.Control type="email" placeholder="Enter email" defaultValue={currentRegistry?.email}/>
+            <Form.Control
+              type="email"
+              placeholder="Enter email"
+              defaultValue={currentRegistry?.email}
+              onChange={(event) => onChangeCurrentRegistry("email", event.target.value)} 
+            />
           </Form.Group>
+
           <Form.Group controlId="formTreatment">
             <Form.Label>Treatment</Form.Label>
-            <Form.Control as="textarea" placeholder="Enter treatment" rows={3} defaultValue={currentRegistry?.treatment}/>
+            <Form.Control 
+              as="textarea" 
+              placeholder="Enter treatment"
+              rows={3}
+              defaultValue={currentRegistry?.treatment}
+              onChange={(event) => onChangeCurrentRegistry("treatment", event.target.value)} 
+            />
           </Form.Group>
         </Modal.Body>
     
@@ -127,26 +149,30 @@ function App() {
           </thead>
 
           <tbody>
-            
               {
-              itemList.map((currentValue, index) => {
-                return (
-                  <>
-                    <tr>
-                      <td>{itemList[index] && itemList[index].id}</td>
-                      <td>{itemList[index] && itemList[index].name}</td>
-                      <td>{itemList[index] && itemList[index].email}</td>
-                      <td>{itemList[index] && itemList[index].treatment}</td>
-                      <td>
-                        <ButtonGroup className="d-flex">
-                          <Button variant="outline-primary" onClick={() => handleShow(index)}>Edit</Button>
-                          <Button variant="outline-danger">Delete</Button>
-                        </ButtonGroup>
-                      </td>
-                    </tr>
-                  </>
-                )
-              })}
+                itemList.map((currentValue, index) => {
+                  return (
+                    <>
+                      <tr>
+                        {itemList[index] &&
+                          <>
+                            <td> {itemList[index].id}</td>
+                            <td> {itemList[index].name}</td>
+                            <td> {itemList[index].email}</td>
+                            <td> {itemList[index].treatment}</td>
+                            <td>
+                              <ButtonGroup className="d-flex">
+                                <Button variant="outline-primary" onClick={() => handleShow(index)}>Edit</Button>
+                                <Button variant="outline-danger">Delete</Button>
+                              </ButtonGroup>
+                            </td>
+                          </>
+                        }
+                      </tr>
+                    </>
+                  )
+                })
+              }
           </tbody>
         </Table>
         {dialog}
