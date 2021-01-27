@@ -25,12 +25,36 @@ app.get("/index", function(req:any, res:any, next:any) {
     });
 });
 
-app.post("/edit", (req:any, res:any, next:any) => {
+app.post("/update", (req:any, res:any, next:any) => {
     let patient = req.body
-    console.log(patient)
+    console.log('UPDATE\n', patient)
+
     knex('patient')
         .where({ id: patient.id })
         .update(patient, [], [])
+    .catch((e:any) => {
+        console.error(e);
+    });
+});
+
+app.post("/create", (req:any, res:any, next:any) => {
+    let patient = req.body
+    console.log('INSERTION\n', patient)
+
+    knex('patient')
+        .insert(patient)
+    .catch((e:any) => {
+        console.error(e);
+    });
+});
+
+app.post("/delete", (req:any, res:any, next:any) => {
+    let patient = req.body
+    console.log('DELETITION\n', patient)
+
+    knex('patient')
+        .where('id', patient.id)
+        .del()
     .catch((e:any) => {
         console.error(e);
     });

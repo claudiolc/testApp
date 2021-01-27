@@ -8,10 +8,8 @@ import { ETIMEDOUT } from 'constants';
 import { Form, Modal } from 'react-bootstrap';
 import { JsonSourceFile } from 'typescript';
 
-// const state = {listItem: []};
-
 interface Person {
-  id: number;
+  id: number | undefined;
   name: string;
   email: string;
   treatment: string;  
@@ -19,28 +17,47 @@ interface Person {
 
 
 function App() {
-  const [itemList, setItemList] = React.useState<Person[]>([])
-  const [edition, setEdition] = React.useState<Boolean>(false)
-  const [currentRegistry, setCurrentRegistry] = React.useState<Person>({id: 0, name: 'null', email: 'null', treatment: 'null'});
-  const [updateCount, setUpdateCount] = React.useState<number>(0);
+  const defaultRegistry = {id: undefined, name: '', email: '', treatment: ''};
 
-  const handleClose = () => setEdition(false);
-  const handleShow = (index: number) => {
-    setCurrentRegistry(itemList[index])
-    setEdition(true);
+  const [itemList, setItemList] = React.useState<Person[]>([]);
+  const [update, setUpdate] = React.useState<Boolean>(false);
+  const [currentRegistry, setCurrentRegistry] = React.useState<Person>(defaultRegistry);
+  const [updateCount, setUpdateCount] = React.useState<number>(0);
+  const [newRegistry, setNewRegistry] = React.useState<Boolean>(false);
+
+  const handleCloseDialog = () => {
+    setUpdate(false);
+    setNewRegistry(false);
+  }
+
+  const handleShowDialog = (index: number = -1) => {
+    if (!newRegistry)
+      if (index !== -1)
+        setCurrentRegistry(itemList[index])
+    else
+      setCurrentRegistry(defaultRegistry)
+
+    setUpdate(true)
+  }
+
+  const handleNewRegistry = () => {
+    setNewRegistry(true)
+    handleShowDialog()
   }
 
   const mainUrl = "http://localhost:9000/";
   const indexUrl = mainUrl + "index";
-  const editUrl = mainUrl + "edit"
+  const updateUrl = mainUrl + "update";
+  const createUrl = mainUrl + "create";
+  const deleteUrl = mainUrl + "delete";
+  
 
-  async function sendRequest() {
-    const response = await fetch(editUrl, {
+  async function sendUpdateRequest() {
+    const response = await fetch(updateUrl, {
       method: 'POST', 
       mode: 'cors',
       headers: {
         'Content-Type': 'application/json'
-        // 'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: JSON.stringify(currentRegistry)
     });
@@ -48,9 +65,45 @@ function App() {
     return response;
   }
 
+  async function sendCreateRequest() {
+    const response = await fetch(createUrl, {
+      method: 'POST', 
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(currentRegistry)
+    });
+
+    return response;
+  }
+
+  async function sendDeleteRequest(patient: Person) {
+    const response = await fetch(deleteUrl, {
+      method: 'POST', 
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(patient)
+    });
+
+    return response;
+  }
+
   const handleSubmitChanges = () => {
-    sendRequest()
-    handleClose()
+    if(!newRegistry)
+      sendUpdateRequest()
+    else
+      sendCreateRequest()
+
+    handleCloseDialog()
+    setUpdateCount(updateCount + 1)
+  }
+
+  const handleDeletition = (index: number) => {
+    sendDeleteRequest(itemList[index])
+    handleCloseDialog()
     setUpdateCount(updateCount + 1)
   }
 
@@ -74,10 +127,10 @@ function App() {
   }
 
   const dialog = (
-    <Form id="editForm">
-      <Modal show={edition} onHide={handleClose}>
+    <Form id="inputForm">
+      <Modal show={update} onHide={handleCloseDialog}>
         <Modal.Header closeButton>
-          <Modal.Title>Edit patient</Modal.Title>
+          <Modal.Title>Update patient</Modal.Title>
         </Modal.Header>
     
         <Modal.Body>
@@ -86,8 +139,9 @@ function App() {
             <Form.Control 
               type="number"
               placeholder="Enter ID"
-              value={currentRegistry?.id}
-              disabled
+              defaultValue={currentRegistry?.id}
+              onChange={(event) => onChangeCurrentRegistry("id", +event.target.value)}
+              disabled={!newRegistry}
             />
           </Form.Group>
 
@@ -124,7 +178,7 @@ function App() {
         </Modal.Body>
     
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>Close</Button>
+          <Button variant="secondary" onClick={handleCloseDialog}>Close</Button>
           <Button variant="primary" type="submit" onClick={handleSubmitChanges}>
             Submit changes
           </Button>
@@ -136,7 +190,13 @@ function App() {
   return (
     <>
       <Container className="mt-5">
-        <Button variant="success" className="mb-3">New registry</Button>
+        <Button
+          variant="success"
+          className="mb-3"
+          onClick={handleNewRegistry}
+        >
+          New registry
+        </Button>
         <Table striped bordered hover>
           <thead>
             <tr>
@@ -162,8 +222,8 @@ function App() {
                             <td> {itemList[index].treatment}</td>
                             <td>
                               <ButtonGroup className="d-flex">
-                                <Button variant="outline-primary" onClick={() => handleShow(index)}>Edit</Button>
-                                <Button variant="outline-danger">Delete</Button>
+                                <Button variant="outline-primary" onClick={() => handleShowDialog(index)}>Edit</Button>
+                                <Button variant="outline-danger" onClick={() => handleDeletition(index)}>Delete</Button>
                               </ButtonGroup>
                             </td>
                           </>

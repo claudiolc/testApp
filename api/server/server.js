@@ -23,12 +23,31 @@ app.get("/index", function (req, res, next) {
         console.error(e);
     });
 });
-app.post("/edit", function (req, res, next) {
+app.post("/update", function (req, res, next) {
     var patient = req.body;
-    console.log(patient);
+    console.log('UPDATE\n', patient);
     knex('patient')
         .where({ id: patient.id })
-        .update(patient)
+        .update(patient, [], [])
+        .catch(function (e) {
+        console.error(e);
+    });
+});
+app.post("/create", function (req, res, next) {
+    var patient = req.body;
+    console.log('INSERTION\n', patient);
+    knex('patient')
+        .insert(patient)
+        .catch(function (e) {
+        console.error(e);
+    });
+});
+app.post("/delete", function (req, res, next) {
+    var patient = req.body;
+    console.log('DELETITION\n', patient);
+    knex('patient')
+        .where('id', patient.id)
+        .del()
         .catch(function (e) {
         console.error(e);
     });
