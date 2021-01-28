@@ -26,9 +26,10 @@ app.get("/index", function (req, res, next) {
 app.post("/update", function (req, res, next) {
     var patient = req.body;
     console.log('UPDATE\n', patient);
-    knex('patient')
+    var result = knex('patient')
         .where({ id: patient.id })
         .update(patient, [], [])
+        .then(function (result) { return res.sendStatus(result ? 200 : 400); })
         .catch(function (e) {
         console.error(e);
     });
@@ -51,6 +52,7 @@ app.post("/delete", function (req, res, next) {
         .catch(function (e) {
         console.error(e);
     });
+    res.send('POST');
 });
 app.listen(9000, function () {
     console.log('App listening on port 9000');

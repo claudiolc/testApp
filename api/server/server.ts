@@ -29,12 +29,14 @@ app.post("/update", (req:any, res:any, next:any) => {
     let patient = req.body
     console.log('UPDATE\n', patient)
 
-    knex('patient')
+    const result = knex('patient')
         .where({ id: patient.id })
         .update(patient, [], [])
+        .then((result: any) => res.sendStatus(result ? 200 : 400))
     .catch((e:any) => {
         console.error(e);
-    });
+    })
+    
 });
 
 app.post("/create", (req:any, res:any, next:any) => {
@@ -57,7 +59,8 @@ app.post("/delete", (req:any, res:any, next:any) => {
         .del()
     .catch((e:any) => {
         console.error(e);
-    });
+    })
+    res.send('POST')
 });
 
 app.listen(9000, function() {

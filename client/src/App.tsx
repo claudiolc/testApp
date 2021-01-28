@@ -1,22 +1,16 @@
 import './App.css';
-import React, { SetStateAction, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Table from 'react-bootstrap/Table';
 import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import { ETIMEDOUT } from 'constants';
-import { Form, Modal } from 'react-bootstrap';
-import { JsonSourceFile } from 'typescript';
-
-interface Person {
-  id: number | undefined;
-  name: string;
-  email: string;
-  treatment: string;  
-}
-
+import { Alert, Form, Modal } from 'react-bootstrap';
+import { appContainer } from './inversify.config';
+import { Model } from './entities';
+import { Person } from './interfaces';
 
 function App() {
+  const model = appContainer.get(Model)
   const defaultRegistry = {id: undefined, name: '', email: '', treatment: ''};
 
   const [itemList, setItemList] = React.useState<Person[]>([]);
@@ -24,6 +18,11 @@ function App() {
   const [currentRegistry, setCurrentRegistry] = React.useState<Person>(defaultRegistry);
   const [updateCount, setUpdateCount] = React.useState<number>(0);
   const [newRegistry, setNewRegistry] = React.useState<Boolean>(false);
+  const [showAlert, setShowAlert] = React.useState<boolean>(false);
+  const [operationSuccessful, setOperationSuccessful] = React.useState<boolean>(true);
+
+  const ALERT_DELAY = 3000;
+
 
   const handleCloseDialog = () => {
     setUpdate(false);
@@ -45,81 +44,34 @@ function App() {
     handleShowDialog()
   }
 
-  const mainUrl = "http://localhost:9000/";
-  const indexUrl = mainUrl + "index";
-  const updateUrl = mainUrl + "update";
-  const createUrl = mainUrl + "create";
-  const deleteUrl = mainUrl + "delete";
-  
-
-  async function sendUpdateRequest() {
-    const response = await fetch(updateUrl, {
-      method: 'POST', 
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(currentRegistry)
-    });
-
-    return response;
-  }
-
-  async function sendCreateRequest() {
-    const response = await fetch(createUrl, {
-      method: 'POST', 
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(currentRegistry)
-    });
-
-    return response;
-  }
-
-  async function sendDeleteRequest(patient: Person) {
-    const response = await fetch(deleteUrl, {
-      method: 'POST', 
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(patient)
-    });
-
-    return response;
-  }
-
-  const handleSubmitChanges = () => {
+  async function handleSubmitChanges() {
     if(!newRegistry)
-      sendUpdateRequest()
+      // model.sendUpdateRequest(currentRegistry).then((res) => {
+      //   console.log('res')
+      //   triggerAlertBox(res.ok)
+      // })
+      model.sendUpdateRequest(currentRegistry).then(() => 
+        console.log('res')
+      )
     else
-      sendCreateRequest()
+      model.sendCreateRequest(currentRegistry).then(res => triggerAlertBox(res.ok))
 
     handleCloseDialog()
     setUpdateCount(updateCount + 1)
   }
 
   const handleDeletition = (index: number) => {
-    sendDeleteRequest(itemList[index])
-    handleCloseDialog()
+    let success: boolean;
+    model.sendDeleteRequest(itemList[index]).then(res => triggerAlertBox(res.ok))
     setUpdateCount(updateCount + 1)
-  }
-
-  async function fetchJson() {
-    return await fetch(indexUrl)
-        .then(res => res.json());
-  }
-
-  async function callApi() {
-    let json = await fetchJson()
-        .then(res => res as Person[])
-        .then(res => setItemList(res))
+    handleCloseDialog();
   }
 
   useEffect(() => {
-    callApi()
+    model.callApi().then(data => {
+      setItemList(data)
+      console.log('FETCHING...')            
+    });
   }, [updateCount])
 
   function onChangeCurrentRegistry<k extends keyof Person>(key: k, value: Person[k])  {
@@ -130,7 +82,7 @@ function App() {
     <Form id="inputForm">
       <Modal show={update} onHide={handleCloseDialog}>
         <Modal.Header closeButton>
-          <Modal.Title>Update patient</Modal.Title>
+          <Modal.Title>{newRegistry ? 'Create' : 'Update'} patient</Modal.Title>
         </Modal.Header>
     
         <Modal.Body>
@@ -187,6 +139,20 @@ function App() {
     </Form>
   )
 
+  const alertBox = (
+     <Alert show={showAlert} variant={operationSuccessful ? 'success' : 'danger'} className="d-flex">
+      <p className="m-auto">{operationSuccessful ? 'Operation done successfuly' : "The operation couldn't be completed"}</p>
+    </Alert>
+  );
+
+  function triggerAlertBox(success: boolean) {
+    setOperationSuccessful(success);
+    setShowAlert(true);
+    setTimeout(() => {
+      setShowAlert(false)
+    }, ALERT_DELAY);
+  }
+
   return (
     <>
       <Container className="mt-5">
@@ -236,6 +202,7 @@ function App() {
           </tbody>
         </Table>
         {dialog}
+        {alertBox}
       </Container>
 
       
